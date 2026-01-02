@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Precision Financial Analytics</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="login-page">
+
+    <div class="glass-card login-card animate">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div class="logo" style="justify-content: center; margin-bottom: 1rem;">
+                <i class="fas fa-chart-pie" style="font-size: 2rem;"></i>
+            </div>
+            <h2>Welcome Back</h2>
+            <p style="color: var(--text-muted);">Sign in to access your analytics dashboard</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" class="input-field" placeholder="name@company.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+            </div>
+
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; font-size: 0.9rem; color: var(--text-muted);">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox"> Remember me
+                </label>
+                <a href="#" onclick="resetPassword()" style="color: var(--accent);">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+        </form>
+
+        <div style="text-align: center; margin: 1.5rem 0; color: var(--text-muted);">
+            <span>or continue with</span>
+        </div>
+
+        <button type="button" class="btn" onclick="signInWithGoogle()"
+            style="width: 100%; background: white; color: #333; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem;">
+            <i class="fab fa-google" style="color: #4285F4; font-size: 1.2rem;"></i>
+            Sign in with Google
+        </button>
+
+        <p style="margin-top: 2rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+            Don't have an account? <a href="#" onclick="showSignUp()" style="color: var(--accent);">Sign Up</a>
+        </p>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div id="signupModal"
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="glass-card" style="width: 90%; max-width: 400px; padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>Create Account</h2>
+                <button onclick="hideSignUp()"
+                    style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+            </div>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" class="input-field" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">Email Address</label>
+                    <input type="email" id="signupEmail" class="input-field" placeholder="name@company.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" class="input-field" placeholder="Min 6 characters"
+                        required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+            </form>
+
+            <div style="text-align: center; margin: 1rem 0; color: var(--text-muted);">
+                <span>or</span>
+            </div>
+
+            <button type="button" class="btn" onclick="signInWithGoogle()"
+                style="width: 100%; background: white; color: #333; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem;">
+                <i class="fab fa-google" style="color: #4285F4; font-size: 1.2rem;"></i>
+                Sign up with Google
+            </button>
+            <p style="margin-top: 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                Already have an account? <a href="#" onclick="hideSignUp()" style="color: var(--accent);">Sign In</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay"
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+        <div style="text-align: center; color: white;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+            <p>Signing in...</p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
+    <!-- Load config -->
+    <script src=".gitignore/config.js"></script>
+
+    <script>
+        // ===========================================
+        // Initialize Firebase
+        // ===========================================
+        firebase.initializeApp(FIREBASE_CONFIG);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ===========================================
+        // Loading State
+        // ===========================================
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // ===========================================
+        // Email/Password Sign In
+        // ===========================================
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            showLoading();
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                await saveUserData(userCredential.user);
+                window.location.href = 'homePage.html';
+            } catch (error) {
+                hideLoading();
+                alert(`Login failed: ${error.message}`);
+            }
+        });
+
+        // ===========================================
+        // Email/Password Sign Up
+        // ===========================================
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+
+            showLoading();
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+
+                // Update profile with name
+                await userCredential.user.updateProfile({ displayName: name });
+
+                // Save to database
+                await saveUserData(userCredential.user, name);
+
+                hideSignUp();
+                window.location.href = 'homePage.html';
+            } catch (error) {
+                hideLoading();
+                alert(`Sign up failed: ${error.message}`);
+            }
+        });
+
+        // ===========================================
+        // Google Sign-In (Firebase)
+        // ===========================================
+        async function signInWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+
+            showLoading();
+            try {
+                const result = await auth.signInWithPopup(provider);
+                await saveUserData(result.user);
+                window.location.href = 'homePage.html';
+            } catch (error) {
+                hideLoading();
+                if (error.code !== 'auth/popup-closed-by-user') {
+                    alert(`Google sign-in failed: ${error.message}`);
+                }
+            }
+        }
+
+        // ===========================================
+        // Save User Data to Firestore
+        // ===========================================
+        async function saveUserData(user, name = null) {
+            const userData = {
+                uid: user.uid,
+                email: user.email,
+                name: name || user.displayName || 'Unknown',
+                picture: user.photoURL || null,
+                provider: user.providerData[0]?.providerId || 'email',
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // Check if user exists
+            const userDoc = await db.collection('users').doc(user.uid).get();
+
+            if (!userDoc.exists) {
+                // New user - add createdAt
+                userData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            }
+
+            // Save/update user in Firestore
+            await db.collection('users').doc(user.uid).set(userData, { merge: true });
+
+            // Also save to session for quick access
+            sessionStorage.setItem('user', JSON.stringify({
+                uid: user.uid,
+                name: userData.name,
+                email: user.email,
+                picture: userData.picture
+            }));
+        }
+
+        // ===========================================
+        // Password Reset
+        // ===========================================
+        async function resetPassword() {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                alert('Please enter your email address first.');
+                return;
+            }
+
+            try {
+                await auth.sendPasswordResetEmail(email);
+                alert('Password reset email sent! Check your inbox.');
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // ===========================================
+        // Sign Up Modal
+        // ===========================================
+        function showSignUp() {
+            document.getElementById('signupModal').style.display = 'flex';
+        }
+
+        function hideSignUp() {
+            document.getElementById('signupModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('signupModal').addEventListener('click', (e) => {
+            if (e.target.id === 'signupModal') hideSignUp();
+        });
+
+        // ===========================================
+        // Check if already logged in
+        // ===========================================
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in, redirect to dashboard
+                sessionStorage.setItem('user', JSON.stringify({
+                    uid: user.uid,
+                    name: user.displayName,
+                    email: user.email,
+                    picture: user.photoURL
+                }));
+                window.location.href = 'homePage.html';
+            }
+        });
+    </script>
+
+</body>
+
+</html>

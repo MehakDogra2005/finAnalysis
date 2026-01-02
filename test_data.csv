@@ -1,0 +1,6 @@
+LoanID,Amount,Rate,Term,Status
+L001,500000,4.5,15,Active
+L002,120000,3.8,30,Active
+L003,300000,5.2,10,Review
+L004,850000,4.1,20,Active
+L005,45000,6.0,5,Closed

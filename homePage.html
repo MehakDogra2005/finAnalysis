@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision Financial Analytics | Prepayment Decision Intelligence</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header id="mainHeader">
+        <div class="container nav-container">
+            <div class="logo">
+                <i class="fas fa-chart-pie"></i>
+                <span>Precision</span>
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#">Analysis</a></li>
+                    <li><a href="#">Solutions</a></li>
+                    <li><a href="#">Enterprise</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons" id="authButtons">
+                <a href="login.html" class="btn btn-glass">Log In</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Firebase SDK for Auth State -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src=".gitignore/config.js"></script>
+    <script>
+        // Initialize Firebase and check auth state
+        firebase.initializeApp(FIREBASE_CONFIG);
+        const auth = firebase.auth();
+
+        auth.onAuthStateChanged((user) => {
+            const authButtons = document.getElementById('authButtons');
+            if (user) {
+                // User is logged in - show user info and logout
+                const displayName = user.displayName || user.email.split('@')[0];
+                const userPicture = user.photoURL;
+                
+                authButtons.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        ${userPicture ? `<img src="${userPicture}" alt="Profile" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent);">` : `<i class="fas fa-user-circle" style="font-size: 1.8rem; color: var(--accent);"></i>`}
+                        <span style="color: var(--text-light); font-weight: 500;">${displayName}</span>
+                        <button onclick="logout()" class="btn btn-glass" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                `;
+            } else {
+                // User is not logged in - show login button
+                authButtons.innerHTML = `<a href="login.html" class="btn btn-glass">Log In</a>`;
+            }
+        });
+
+        function logout() {
+            auth.signOut().then(() => {
+                sessionStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }).catch((error) => {
+                alert('Logout failed: ' + error.message);
+            });
+        }
+    </script>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1 class="animate">Intelligent Prepayment <br> Decision Analysis</h1>
+            <p class="animate delay-1">Leverage AI-driven insights to evaluate loan prepayment strategies. Maximize
+                liquidity and minimize risk with real-time analytics.</p>
+            <div class="animate delay-2">
+                <a href="#analysis" class="btn btn-primary">Start Analysis <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analysis Dashboard -->
+    <section id="analysis" class="container">
+        <div class="analysis-grid">
+            <!-- Input Card -->
+            <div class="glass-card input-section animate delay-3">
+                <h3><i class="fas fa-database"></i> Input Data</h3>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Upload your financial documents (Excel/CSV) to
+                    generate insights.</p>
+
+                <form id="analysisForm">
+                    <div class="form-group">
+                        <label for="scenarioText">Scenario Context</label>
+                        <textarea id="scenarioText" name="context"
+                            placeholder="Describe the loan terms, interest rates, and current capital liquidity..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Financial Documents</label>
+                        <div class="file-drop-area" id="dropArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p><strong>Click to upload</strong> or drag and drop</p>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">CSV, PDF, XLSX (Max 50MB)</span>
+                            <input type="file" id="fileInput" name="files" multiple hidden accept=".csv,.xlsx,.xls,.pdf">
+                        </div>
+                        <div id="fileList" class="uploaded-files-list"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-bolt"></i> Run Analysis
+                    </button>
+                    <p id="errorMsg"
+                        style="color: var(--danger); font-size: 0.9rem; margin-top: 10px; display: none; text-align: center;">
+                    </p>
+                </form>
+            </div>
+
+            <!-- Output Card -->
+            <div class="glass-card output-section animate delay-3">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h3>Analysis Results</h3>
+                    <div id="statusBadge" class="result-status status-pending">Waiting for data</div>
+                </div>
+
+                <div id="emptyState" style="text-align: center; padding: 4rem 0; opacity: 0.5;">
+                    <i class="fas fa-chart-line" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <p>Submit data to generate insights</p>
+                </div>
+
+                <div id="resultsContent" style="display: none;">
+                    <p id="recommendationText"
+                        style="font-size: 1.1rem; margin-bottom: 2rem; border-left: 3px solid var(--accent); padding-left: 1rem;">
+                        <!-- JS populated -->
+                    </p>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="savingsValue">--</div>
+                            <div class="stat-label">Proj. Savings</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="roiValue">--</div>
+                            <div class="stat-label">ROI Impact</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="riskValue">--</div>
+                            <div class="stat-label">Risk Score</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="timeValue">--</div>
+                            <div class="stat-label">Break-even</div>
+                        </div>
+                    </div>
+
+                    <!-- Data Table Preview -->
+                    <div style="margin-top: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h4 style="font-size: 1rem; color: var(--text-muted);">Data Preview</h4>
+                            <span id="totalRowsIndicator" style="font-size: 0.85rem; color: var(--text-muted);"></span>
+                        </div>
+                        <div class="table-container">
+                            <table id="dataTable">
+                                <thead>
+                                    <!-- Populated via JS -->
+                                </thead>
+                                <tbody>
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1rem; text-align: center;">
+                        <a id="downloadBtn" href="#" class="btn btn-glass" style="width: 100%;">
+                            <i class="fas fa-file-excel"></i> Download Full Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer
+        style="margin-top: 6rem; padding: 3rem 0; text-align: center; color: var(--text-muted); border-top: 1px solid var(--glass-border);">
+        <p>&copy; 2026 Precision Financial Analytics. Enterprise Grade Security.</p>
+    </footer>
+
+    <script>
+        // Header scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('mainHeader');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // File Upload Logic
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const errorMsg = document.getElementById('errorMsg');
+        
+        // Store uploaded files globally
+        let uploadedFiles = [];
+        // Store file URLs for preview
+        let fileUrls = {};
+
+        dropArea.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', handleFiles);
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false);
+        });
+
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            addFilesToList([...files]);
+        }
+
+        function handleFiles(e) {
+            addFilesToList([...e.target.files]);
+        }
+        
+        function addFilesToList(newFiles) {
+            // Add new files to the existing list (avoid duplicates by name)
+            newFiles.forEach(file => {
+                const exists = uploadedFiles.some(f => f.name === file.name);
+                if (!exists) {
+                    uploadedFiles.push(file);
+                    // Create object URL for file preview
+                    fileUrls[file.name] = URL.createObjectURL(file);
+                }
+            });
+            renderFileList();
+            if (uploadedFiles.length > 0) errorMsg.style.display = 'none';
+        }
+        
+        function renderFileList() {
+            fileList.innerHTML = uploadedFiles.map((file, index) => {
+                const fileIcon = getFileIcon(file.name);
+                const fileSize = formatFileSize(file.size);
+                return `
+                    <div class="uploaded-file-item" data-index="${index}">
+                        <div class="file-info" onclick="openFile('${file.name}')">
+                            <i class="fas ${fileIcon}"></i>
+                            <span class="file-name">${file.name}</span>
+                            <span class="file-size">(${fileSize})</span>
+                        </div>
+                        <button type="button" class="remove-file-btn" onclick="removeFile(${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                'csv': 'fa-file-csv',
+                'xlsx': 'fa-file-excel',
+                'xls': 'fa-file-excel',
+                'pdf': 'fa-file-pdf'
+            };
+            return icons[ext] || 'fa-file';
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        function openFile(filename) {
+            const url = fileUrls[filename];
+            if (url) {
+                window.open(url, '_blank');
+            }
+        }
+        
+        function removeFile(index) {
+            const file = uploadedFiles[index];
+            // Revoke the object URL to free memory
+            if (fileUrls[file.name]) {
+                URL.revokeObjectURL(fileUrls[file.name]);
+                delete fileUrls[file.name];
+            }
+            uploadedFiles.splice(index, 1);
+            renderFileList();
+        }
+
+        // Check for User Login (Simulated)
+        const urlParams = new URLSearchParams(window.location.search);
+        const user = urlParams.get('user');
+        if (user) {
+            const authContainer = document.querySelector('.auth-buttons');
+            authContainer.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: var(--text-main); font-weight: 500;">Welcome, ${user}</span>
+                    <div style="width: 35px; height: 35px; background: var(--gradient-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Form Handler with Fetch to Backend
+        document.getElementById('analysisForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMsg.style.display = 'none';
+
+            // 1. Validation: Check if files exist
+            if (uploadedFiles.length === 0) {
+                errorMsg.innerText = "Please upload at least one financial data file to proceed.";
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+
+            // Create FormData with all uploaded files
+            const formData = new FormData();
+            formData.append('context', document.getElementById('scenarioText').value);
+            
+            // Append all files to formData
+            uploadedFiles.forEach((file, index) => {
+                formData.append('files', file);
+            });
+
+            try {
+                // 2. Send all files to Backend API
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Analysis failed.');
+                }
+
+                const data = await response.json();
+
+                // 3. Populate Results
+                document.getElementById('emptyState').style.display = 'none';
+                document.getElementById('resultsContent').style.display = 'block';
+                document.getElementById('resultsContent').classList.add('animate');
+
+                // Metrics
+                const statusBadge = document.getElementById('statusBadge');
+                if (data.recommendation.type === 'approved') {
+                    statusBadge.className = 'result-status status-success';
+                    statusBadge.innerText = 'Prepayment Recommended';
+                } else {
+                    statusBadge.className = 'result-status status-warning';
+                    statusBadge.innerText = 'Review Needed';
+                }
+
+                document.getElementById('recommendationText').innerHTML = `<strong>Recommendation:</strong> ${data.recommendation.text}`;
+                document.getElementById('savingsValue').innerText = data.metrics.savings;
+                document.getElementById('roiValue').innerText = data.metrics.roi;
+                document.getElementById('riskValue').innerText = data.metrics.risk;
+                document.getElementById('timeValue').innerText = data.metrics.breakeven;
+
+                // Download Link
+                document.getElementById('downloadBtn').href = data.download_url;
+
+                // 4. Populate Table
+                const table = document.getElementById('dataTable');
+                const thead = table.querySelector('thead');
+                const tbody = table.querySelector('tbody');
+
+                // Clear old
+                thead.innerHTML = '';
+                tbody.innerHTML = '';
+
+                // Show total rows indicator
+                const totalRowsIndicator = document.getElementById('totalRowsIndicator');
+                if (data.table_data.total_rows) {
+                    totalRowsIndicator.innerText = `Showing ${data.table_data.rows.length} of ${data.table_data.total_rows} rows`;
+                } else {
+                    totalRowsIndicator.innerText = `Showing ${data.table_data.rows.length} rows`;
+                }
+
+                // Headers
+                if (data.table_data.headers.length > 0) {
+                    const headerRow = document.createElement('tr');
+                    data.table_data.headers.forEach(h => {
+                        const th = document.createElement('th');
+                        th.innerText = h;
+                        headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+
+                    // Rows
+                    data.table_data.rows.forEach(row => {
+                        const tr = document.createElement('tr');
+                        data.table_data.headers.forEach(h => {
+                            const td = document.createElement('td');
+                            td.innerText = row[h] !== undefined ? row[h] : '';
+                            tr.appendChild(td);
+                        });
+                        tbody.appendChild(tr);
+                    });
+                }
+
+            } catch (err) {
+                console.error(err);
+                errorMsg.innerText = err.message || "An error occurred during analysis. Please try again.";
+                errorMsg.style.display = 'block';
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>
